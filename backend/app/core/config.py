@@ -8,6 +8,13 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/bookleaf"
     )
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 720
+
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"
+    frontend_origin: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",

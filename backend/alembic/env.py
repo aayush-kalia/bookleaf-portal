@@ -3,7 +3,10 @@ import app.models
 from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
+from app.models.user import User
+from app.models.author import Author
+from app.models.book import Book
+from app.models.tickets import Ticket, TicketMessage, InternalNote, TicketEvent
 from app.core.config import settings
 from app.db.base import Base
 
