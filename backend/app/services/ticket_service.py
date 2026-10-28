@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime, timezone
-
+from app.models.tickets.ticket import TicketCategory, TicketPriority
+from app.services.ai.classification import classify_ticket
+from app.services.ai.fallback_rules import classify_with_rules
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -365,3 +367,61 @@ def list_internal_notes(db: Session, ticket_id: uuid.UUID) -> list[InternalNote]
             .order_by(InternalNote.created_at.asc())
         ).all()
     )
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def classify_ticket_background(ticket_id: str, subject: str, description: str, book_context: str = "") -> None:
+    """Classify a ticket after creation; fall back to rules on failure."""
+    from app.db.session import SessionLocal
+
+    db = SessionLocal()
+
+    try:
+        ticket = db.get(Ticket, ticket_id)
+        if ticket is None:
+            return
+
+        try:
+            result = classify_ticket({
+                "subject": subject[:500],
+                "description": description[:2000],
+                "book_context": book_context[:500]or "No book context available.",
+            })
+            category = TicketCategory(result.category)
+            priority = TicketPriority(result.priority)
+
+            ticket.ai_category = category.value
+            ticket.ai_priority = priority.value
+            ticket.ai_reason = result.reason
+            ticket.classification_source = "ai"
+            ticket.ai_status = "done"
+
+        except Exception:
+            logger.exception("AI classification failed for ticket %s", ticket_id)
+
+            result = classify_with_rules(subject, description)
+            ticket.ai_category = result["category"]
+            ticket.ai_priority = result["priority"]
+            ticket.ai_reason = result["reason"]
+            ticket.classification_source = "rules"
+            ticket.ai_status = "failed"
+
+        # Apply the result to the ticket's operational fields too.
+        try:
+            ticket.category = TicketCategory(ticket.ai_category)
+            ticket.priority = TicketPriority(ticket.ai_priority)
+        except ValueError:
+            logger.exception("Invalid classification enum for ticket %s", ticket_id)
+            ticket.category = TicketCategory.GENERAL_INQUIRY
+            ticket.priority = TicketPriority.MEDIUM
+            ticket.classification_source = "rules"
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        logger.exception("Could not persist classification for ticket %s", ticket_id)
+    finally:
+        db.close()

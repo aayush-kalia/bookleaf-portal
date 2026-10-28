@@ -2,7 +2,8 @@ import uuid
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-
+from fastapi import BackgroundTasks
+from app.services.ticket_service import classify_ticket_background
 from app.db.dependencies import get_db
 from app.api.dependencies import get_current_user
 from app.models.tickets import Ticket, TicketCategory, TicketPriority, TicketStatus
@@ -38,10 +39,11 @@ def require_admin(user) -> None:
 )
 def create_ticket(
     payload: TicketCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return service.create_ticket(
+    ticket = service.create_ticket(
         db,
         current_user,
         subject=payload.subject,
@@ -49,6 +51,16 @@ def create_ticket(
         book_id=payload.book_id,
         category=payload.category,
     )
+
+    background_tasks.add_task(
+        classify_ticket_background,
+        str(ticket.id),
+        ticket.subject,
+        ticket.description,
+        "",
+    )
+
+    return ticket
 
 
 @router.get("", response_model=TicketListResponse)

@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
     frontend_origin: str = "http://localhost:5173"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
 
     model_config = SettingsConfigDict(
         env_file=".env",
