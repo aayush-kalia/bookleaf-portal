@@ -139,47 +139,24 @@ export default function App() {
     }
   }
 
-// async function handleLogout() {
-//   setError('')
-
-//   try {
-//     const csrfToken = getCookie('csrf_token')
-
-//     if (!csrfToken) {
-//       throw new Error(
-//         'CSRF cookie missing. Please log out and log in again.',
-//       )
-//     }
-
-//     await request('/auth/logout', {
-//       method: 'POST',
-//       headers: {
-//         'X-CSRF-Token': csrfToken,
-//       },
-//     })
-
-//     setUser(null)
-//     setBooks([])
-//     setSummary(null)
-//     setSelectedBook(null)
-//     setMessage('Logged out successfully.')
-//   } catch (err) {
-//     setError(err instanceof Error ? err.message : 'Logout failed')
-//   }
-// }
 async function handleLogout() {
   setError('')
 
   try {
     const csrfToken = getCookie('csrf_token')
 
+    if (!csrfToken) {
+      throw new Error(
+        'CSRF cookie missing. Please log out and log in again.',
+      )
+    }
+
     await request('/auth/logout', {
       method: 'POST',
-      headers: csrfToken
-        ? { 'X-CSRF-Token': csrfToken }
-        : {},
+      headers: {
+        'X-CSRF-Token': csrfToken,
+      },
     })
-
 
     setUser(null)
     setBooks([])
