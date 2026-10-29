@@ -84,7 +84,7 @@ export function AdminDashboard() {
     useAdminTicket(selectedId)
   const { data: notesData, isPending: notesPending } =
     useAdminNotes(selectedId)
-  const { data: draftData, isPending: draftPending, isError: draftError } =
+  const { data: draftData, isPending: draftPending } =
     useAdminDraft(selectedId)
 
   const { data: booksData } = useQuery({
