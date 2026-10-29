@@ -1,5 +1,6 @@
 import uuid
-
+from fastapi import HTTPException
+from app.services.ai.drafter import get_or_generate_draft
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from fastapi import BackgroundTasks
@@ -168,4 +169,22 @@ def post_internal_note(
 
     return service.add_internal_note(
         db, current_user, ticket, payload.body
+    )
+@router.get("/{ticket_id}/draft")
+def get_ticket_draft(
+    ticket_id: uuid.UUID,
+    force_regenerate: bool = Query(False),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    require_admin(current_user)
+    ticket = db.get(Ticket, ticket_id)
+
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    return get_or_generate_draft(
+        db,
+        ticket=ticket,
+        force_regenerate=force_regenerate,
     )

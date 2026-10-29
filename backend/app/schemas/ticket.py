@@ -75,6 +75,10 @@ class TicketResponse(BaseModel):
     category: TicketCategory
     priority: TicketPriority
     classification_source: str
+    ai_status: str
+    ai_category: str | None
+    ai_priority: str | None
+    ai_reason: str | None
     assigned_admin_id: uuid.UUID | None
     last_author_message_at: datetime | None
     created_at: datetime

@@ -97,3 +97,19 @@ def logout(
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: CurrentUser) -> User:
     return current_user
+@router.get("/admins", response_model=list[UserResponse])
+def get_admin_users(
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    role = getattr(current_user.role, "value", current_user.role)
+
+    if role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required",
+        )
+
+    return db.scalars(
+        select(User).where(User.role == "admin")
+    ).all()
