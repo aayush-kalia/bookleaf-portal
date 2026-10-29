@@ -1,4 +1,4 @@
-const API_PREFIX = '/api/v1'
+const API_PREFIX = `${import.meta.env.VITE_API_URL}`
 
 export class ApiError extends Error {
   readonly status: number

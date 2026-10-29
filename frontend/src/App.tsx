@@ -35,7 +35,7 @@ type BookList = {
   }
 }
 
-const API = '/api/v1'
+const API = `${import.meta.env.VITE_API_URL}`
 
 async function request<T>(
   path: string,
