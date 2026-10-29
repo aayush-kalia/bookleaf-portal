@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:5173"
 
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
     app_reference_date: str = "2026-01-15"
 
     model_config = SettingsConfigDict(

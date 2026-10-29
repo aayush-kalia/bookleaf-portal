@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Testing
+.pytest_cache/
+.coverage
+.mypy_cache/
+
+# Frontend
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/

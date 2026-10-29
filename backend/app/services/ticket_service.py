@@ -286,59 +286,66 @@ def update_ticket(
     if user_role(admin) != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    for field, new_value in changes.items():
-        if new_value is None:
-            continue
+    def serialize_event_value(value):
+        if isinstance(value, uuid.UUID):
+            return str(value)
+        if hasattr(value, "value"):
+            return value.value
+        return value
 
-        old_value = getattr(ticket, field)
+    try:
+        for field, new_value in changes.items():
+            if new_value is None:
+                continue
 
-        if old_value == new_value:
-            continue
+            old_value = getattr(ticket, field)
 
-        if field == "assigned_admin_id" and new_value is not None:
+            if old_value == new_value:
+                continue
 
-            assignee = db.get(User, new_value)
-            if assignee is None or user_role(assignee) != "admin":
-                raise HTTPException(
-                    status_code=422,
-                    detail="Assignee must be an existing admin",
-                )
+            if field == "assigned_admin_id" and new_value is not None:
+                assignee = db.get(User, new_value)
+                if assignee is None or user_role(assignee) != "admin":
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Assignee must be an existing admin",
+                    )
 
-        old_serialized = (
-            old_value.value if hasattr(old_value, "value") else old_value
-        )
-        new_serialized = (
-            new_value.value if hasattr(new_value, "value") else new_value
-        )
+            old_serialized = serialize_event_value(old_value)
+            new_serialized = serialize_event_value(new_value)
 
-        setattr(ticket, field, new_value)
+            setattr(ticket, field, new_value)
 
-        if field == "status":
-            if new_value == TicketStatus.RESOLVED:
-                ticket.resolved_at = utc_now()
-                ticket.closed_at = None
-            elif new_value == TicketStatus.CLOSED:
-                ticket.closed_at = utc_now()
-            else:
-                ticket.resolved_at = None
-                ticket.closed_at = None
+            if field == "status":
+                if new_value == TicketStatus.RESOLVED:
+                    ticket.resolved_at = utc_now()
+                    ticket.closed_at = None
+                elif new_value == TicketStatus.CLOSED:
+                    ticket.closed_at = utc_now()
+                else:
+                    ticket.resolved_at = None
+                    ticket.closed_at = None
 
-        add_event(
-            db,
-            ticket,
-            admin.id,
-            "ticket_updated",
-            {
-                "field": field,
-                "old": old_serialized,
-                "new": new_serialized,
-            },
-        )
+            add_event(
+                db,
+                ticket,
+                admin.id,
+                "ticket_updated",
+                {
+                    "field": field,
+                    "old": old_serialized,
+                    "new": new_serialized,
+                },
+            )
 
-    ticket.updated_at = utc_now()
-    db.commit()
-    db.refresh(ticket)
-    return ticket
+        ticket.updated_at = utc_now()
+        db.commit()
+        db.refresh(ticket)
+        return ticket
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 def add_internal_note(
