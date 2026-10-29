@@ -1,8 +1,12 @@
 {
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://bookleaf-portal-kuj1.onrender.com/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/api/:path*",
+      "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }]
     }
   ]
 }
